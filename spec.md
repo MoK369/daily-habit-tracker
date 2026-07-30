@@ -179,7 +179,7 @@ lib/
 
 ### Solution
 
-Flutter Bloc (Cubit)
+Flutter Bloc (Cubit) for feature state, plus `provider` for simple view models / global app-level state (e.g. theme mode, locale) that doesn't need Bloc's event/state ceremony.
 
 ### HabitsCubit Responsibilities
 
@@ -203,7 +203,7 @@ Flutter Bloc (Cubit)
 
 ### Local Database
 
-Hive
+Hive CE (Community Edition fork of Hive, more actively maintained)
 
 **Reason**
 
@@ -230,6 +230,13 @@ Habit
 | name           | String       |
 | createdAt      | DateTime     |
 | completedDates | `List<Date>` |
+
+### App Settings & Sensitive Data
+
+`flutter_secure_storage` (separate from Hive CE, which only stores habit data):
+
+- Persists app-level settings (theme mode, selected language) across restarts — backs `ThemeManager`/`LocaleManager`.
+- Reserved for future sensitive data (e.g. a PIN/passcode app lock) — not implemented in the MVP, but the storage layer is in place for it.
 
 ---
 
@@ -373,16 +380,22 @@ Display:
 
 ## 11. Dependencies
 
-| Package            | Purpose                                             |
-|--------------------|-----------------------------------------------------|
-| `flutter_bloc`     | State management (Cubit)                            |
-| `equatable`        | Value equality for states/entities                  |
-| `hive`             | Local database                                      |
-| `hive_flutter`     | Hive integration with Flutter                       |
-| `path_provider`    | Resolving local storage paths for Hive              |
-| `uuid`             | Generating unique habit IDs                         |
-| `go_router`        | App navigation and routing                          |
-| `flutter_slidable` | Swipe-to-edit / swipe-to-delete on habit list items |
+| Package                  | Purpose                                                     |
+|--------------------------|-------------------------------------------------------------|
+| `flutter_bloc`           | State management (Cubit) for feature state                  |
+| `provider`               | Simple view models / global app-level state (theme, locale) |
+| `equatable`              | Value equality for states/entities                          |
+| `hive_ce`                | Local database (Hive CE fork)                               |
+| `hive_ce_flutter`        | Hive CE integration with Flutter                            |
+| `path_provider`          | Resolving local storage paths for Hive                      |
+| `uuid`                   | Generating unique habit IDs                                 |
+| `go_router`              | App navigation and routing                                  |
+| `flutter_slidable`       | Swipe-to-edit / swipe-to-delete on habit list items         |
+| `get_it`                 | Service locator for dependency injection                    |
+| `injectable`             | Code generation for `get_it` DI registration                |
+| `flutter_localizations`  | Flutter SDK localization delegates                          |
+| `intl`                   | Date/number formatting used by generated `AppLocalizations` |
+| `flutter_secure_storage` | App settings (theme, language) and future sensitive data    |
 
 ---
 
@@ -403,7 +416,19 @@ Material Design 3
 
 ---
 
-## 13. MVP Success Criteria
+## 13. Localization
+
+Flutter's official **gen-l10n** codegen, not a third-party i18n package.
+
+- ARB source files under `lib/l10n/` (`app_en.arb` as the template locale).
+- `l10n.yaml` at project root configures `gen-l10n` (output dir, template file).
+- Generates `AppLocalizations` — accessed via `AppLocalizations.of(context)!`.
+- App and MaterialApp wired with `AppLocalizations.localizationsDelegates` and `AppLocalizations.supportedLocales`.
+- MVP ships with `en` only; structure supports adding locales later without code changes.
+
+---
+
+## 14. MVP Success Criteria
 
 The MVP is considered complete when:
 
@@ -418,7 +443,7 @@ The MVP is considered complete when:
 ### Suggested Development Order
 
 1. Setup project structure.
-2. Configure Hive.
+2. Configure Hive CE.
 3. Create Habit model/entity.
 4. Implement local datasource.
 5. Implement repository.
@@ -432,4 +457,4 @@ The MVP is considered complete when:
 
 ---
 
-_This specification is intentionally small but realistic, making it an excellent foundation for practicing Clean Architecture, Bloc, Hive, and Claude-driven Flutter development._
+_This specification is intentionally small but realistic, making it an excellent foundation for practicing Clean Architecture, Bloc, Hive CE, and Claude-driven Flutter development._

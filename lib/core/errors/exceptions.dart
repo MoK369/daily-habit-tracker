@@ -11,3 +11,7 @@ class CacheException extends AppException {
 class DuplicateNameException extends AppException {
   const DuplicateNameException([super.message]);
 }
+
+class SecureStorageException extends AppException {
+  const SecureStorageException([super.message]);
+}

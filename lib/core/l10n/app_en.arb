@@ -1,0 +1,15 @@
+{
+  "@@locale": "en",
+  "appTitle": "Daily Habit Tracker",
+  "@appTitle": {
+    "description": "The application title"
+  },
+  "habitNameRequired": "Habit name is required.",
+  "@habitNameRequired": {
+    "description": "Validation error shown when the habit name field is empty"
+  },
+  "storageFailureMessage": "Something went wrong. Please try again.",
+  "@storageFailureMessage": {
+    "description": "Generic error shown when a local storage operation fails"
+  }
+}

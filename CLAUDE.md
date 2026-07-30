@@ -44,8 +44,10 @@ lib/
 
 Key decisions baked into the spec — don't deviate without checking with the user:
 
-- **State management**: `flutter_bloc` Cubit (`HabitsCubit`), not raw Bloc. States: `HabitsInitial`, `HabitsLoading`, `HabitsLoaded(List<Habit>)`, `HabitsError(message)`.
-- **Persistence**: Hive (via `hive_flutter`), fully offline — no backend.
+- **State management**: `flutter_bloc` Cubit (`HabitsCubit`), not raw Bloc. States: `HabitsInitial`, `HabitsLoading`, `HabitsLoaded(List<Habit>)`, `HabitsError(message)`. Use `provider` for simple view models / global app-level state (theme, locale) — Cubit stays for feature state.
+- **Persistence**: Hive CE (via `hive_ce_flutter`), fully offline — no backend. `flutter_secure_storage` handles app settings (theme, language — backs `ThemeManager`/`LocaleManager`) and is reserved for future sensitive data (e.g. a PIN/passcode lock), kept separate from Hive's habit data.
+- **Dependency injection**: `get_it` + `injectable` (code-generated registration).
+- **Localization**: Flutter's official `gen-l10n` (ARB files in `lib/l10n/`, `l10n.yaml` config, generated `AppLocalizations`) — no third-party i18n package.
 - **Navigation**: `go_router`, declarative named routes (`/`, `/habit/add`, `/habit/:id/edit`), push/pop only.
 - **Habit entity fields**: `id` (uuid), `name`, `createdAt`, `completedDates` (list of normalized dates).
 - **List item interactions**: tap checkbox toggles completion; swipe (via `flutter_slidable`) reveals Edit/Delete actions.
