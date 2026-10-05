@@ -7,7 +7,7 @@ Keep your replies concise, simple and short. Focus on conveying the key informat
 
 ## Project Status
 
-This is a **Flutter scaffold, not yet implemented**. `lib/main.dart` and `test/widget_test.dart` still contain the default `flutter create` counter template. The actual app to build is fully specified in `spec.md` — **read `spec.md` before writing any feature code**, it is the source of truth for requirements, architecture, and business rules.
+The app shell is in place: `main.dart`, dependency injection, theme and locale managers, and the error-handling core. The habits feature is not built yet, and there are no tests yet (`test/` is empty). The actual app to build is fully specified in `spec.md` — **read `spec.md` before writing any feature code**, it is the source of truth for requirements, architecture, and business rules.
 
 ### What's being built
 
@@ -17,6 +17,8 @@ A "Daily Habit Tracker" MVP: users create habits, mark daily completion, and see
 
 ```bash
 flutter pub get                 # install dependencies after editing pubspec.yaml
+dart run build_runner build     # regenerate DI config after changing injectable classes
+flutter gen-l10n                # regenerate AppLocalizations after changing ARB files
 flutter run                     # run on a connected device/emulator
 flutter analyze                 # static analysis (uses analysis_options.yaml / flutter_lints)
 flutter test                    # run all tests
@@ -25,7 +27,7 @@ flutter test --plain-name "test name"       # run a single test by name
 flutter build apk / ios / linux / web       # platform builds
 ```
 
-There is no CI config, custom lint rule set, or build script beyond the standard Flutter toolchain — `analysis_options.yaml` just includes `package:flutter_lints/flutter.yaml` with no overrides.
+There is no CI config or build script beyond the standard Flutter toolchain. `analysis_options.yaml` includes `package:flutter_lints/flutter.yaml` and enables `avoid_catching_errors`.
 
 ## Architecture (per `spec.md`)
 
@@ -33,7 +35,17 @@ The app must follow **Clean Architecture** with this `lib/` layout:
 
 ```
 lib/
-├── core/                      # constants, errors, utils shared across features
+├── core/
+│   ├── base/                  # BaseResponse, SafeCallMixin (repository wrappers)
+│   ├── constants/
+│   ├── di/                    # get_it + injectable setup, ErrorHandlerModule
+│   ├── errors/                # AppFailure, AppException, ErrorHandler, ExceptionMapper
+│   │   ├── mappers/           # one ExceptionMapper per data source
+│   │   └── presentation/      # AppFailure -> localized text (UI only)
+│   ├── l10n/                  # ARB files, generated AppLocalizations
+│   ├── secure_storage/
+│   ├── theme/
+│   └── route/
 └── features/
     └── habits/
         ├── data/               # models, Hive datasources, repository implementations
@@ -47,12 +59,32 @@ Key decisions baked into the spec — don't deviate without checking with the us
 - **State management**: `flutter_bloc` Cubit (`HabitsCubit`), not raw Bloc. States: `HabitsInitial`, `HabitsLoading`, `HabitsLoaded(List<Habit>)`, `HabitsError(message)`. Use `provider` for simple view models / global app-level state (theme, locale) — Cubit stays for feature state.
 - **Persistence**: Hive CE (via `hive_ce_flutter`), fully offline — no backend. `flutter_secure_storage` handles app settings (theme, language — backs `ThemeManager`/`LocaleManager`) and is reserved for future sensitive data (e.g. a PIN/passcode lock), kept separate from Hive's habit data.
 - **Dependency injection**: `get_it` + `injectable` (code-generated registration).
-- **Localization**: Flutter's official `gen-l10n` (ARB files in `lib/l10n/`, `l10n.yaml` config, generated `AppLocalizations`) — no third-party i18n package.
+- **Localization**: Flutter's official `gen-l10n` (ARB files in `lib/core/l10n/`, `l10n.yaml` config, generated `AppLocalizations`) — no third-party i18n package.
 - **Navigation**: `go_router`, declarative named routes (`/`, `/habit/add`, `/habit/:id/edit`), push/pop only.
 - **Habit entity fields**: `id` (uuid), `name`, `createdAt`, `completedDates` (list of normalized dates).
 - **List item interactions**: tap checkbox toggles completion; swipe (via `flutter_slidable`) reveals Edit/Delete actions.
 
-### Business rules that affect implementation
+## Error handling
+
+The architecture is set up. Skills in `.claude/skills/` describe how to use and extend it: `dart-error-handling-architecture` (setup in a new project), `dart-error-handling-add-data-source` (new data source or library upgrade), and `dart-safecall-repository-usage` (writing repository methods, and when not to use `safeCall`).
+
+- Only repository implementations catch exceptions, through `safeCall` (returns `BaseResponse<T>`) or `safeCallOrNull` (returns `T?`, for fixed nullable signatures). Datasources and cubits don't add try/catch, so all mapping stays in one place.
+- Every public repository method returns `BaseResponse<T>`, or a `Stream` of them, unless a documented exception applies.
+- `AppFailure` is the only error type the domain and presentation layers see. Name its subclasses for what the user experiences (`CacheFailure`, not `HiveFailure`).
+- Mappers implement `ExceptionMapper`, use `canHandle(Object)`, and must be mutually exclusive, so registration order never matters.
+- Never catch an `Error` to hide a bug. Mappers may use narrow type tests (`exception is HiveError`), because Hive uses `Error` for recoverable conditions. Don't write `on Error` catch clauses.
+- `details` is for logs only. `message` is only for text that is already user-safe, such as a backend-provided message.
+- UI text comes from `failure.localized(l10n)` in `lib/core/errors/presentation/`. Nothing outside `presentation/` imports it.
+- A new failure type needs a localizer case and an ARB key. The exhaustive switch in the localizer enforces this.
+
+## Dependency injection and localization rules
+
+- `@InjectableInit` keeps `allowMultipleRegistrations: true`, because mappers are registered `as: ExceptionMapper`.
+- `ErrorHandler` is built only in `lib/core/di/error_handler_module.dart`, as a `@lazySingleton`. Don't change it to `@singleton`: that runs before the mappers are registered and yields an empty list.
+- New mappers use `@Injectable(as: ExceptionMapper)`. Don't build an `ErrorHandler` by hand elsewhere.
+- Regenerate instead of editing. Run `dart run build_runner build` for `*.config.dart`, and `flutter gen-l10n` after ARB changes. Never hand-edit generated files.
+
+## Business rules that affect implementation
 
 - Habit names must be unique.
 - One completion record per calendar day — normalize timestamps to date-only before storing/comparing (see spec.md §7 Rule 3).

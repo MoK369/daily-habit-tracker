@@ -6,5 +6,5 @@ import 'injection.config.dart';
 
 final GetIt getIt = GetIt.instance;
 
-@InjectableInit()
+@InjectableInit(allowMultipleRegistrations: true)
 FutureOr<GetIt> configureDependencies() async => getIt.init();

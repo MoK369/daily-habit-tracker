@@ -11,5 +11,13 @@
   "storageFailureMessage": "Something went wrong. Please try again.",
   "@storageFailureMessage": {
     "description": "Generic error shown when a local storage operation fails"
+  },
+  "duplicateHabitNameMessage": "A habit with this name already exists.",
+  "@duplicateHabitNameMessage": {
+    "description": "Validation error shown when the habit name entered already exists"
+  },
+  "unexpectedErrorMessage": "Something unexpected happened. Please try again.",
+  "@unexpectedErrorMessage": {
+    "description": "Fallback error shown when a failure doesn't match a known category"
   }
 }

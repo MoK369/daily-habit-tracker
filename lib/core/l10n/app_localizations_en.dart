@@ -16,4 +16,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storageFailureMessage => 'Something went wrong. Please try again.';
+
+  @override
+  String get duplicateHabitNameMessage =>
+      'A habit with this name already exists.';
+
+  @override
+  String get unexpectedErrorMessage =>
+      'Something unexpected happened. Please try again.';
 }

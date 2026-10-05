@@ -111,6 +111,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get storageFailureMessage;
+
+  /// Validation error shown when the habit name entered already exists
+  ///
+  /// In en, this message translates to:
+  /// **'A habit with this name already exists.'**
+  String get duplicateHabitNameMessage;
+
+  /// Fallback error shown when a failure doesn't match a known category
+  ///
+  /// In en, this message translates to:
+  /// **'Something unexpected happened. Please try again.'**
+  String get unexpectedErrorMessage;
 }
 
 class _AppLocalizationsDelegate
