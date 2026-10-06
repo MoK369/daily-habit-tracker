@@ -7,7 +7,7 @@ Keep your replies concise, simple and short. Focus on conveying the key informat
 
 ## Project Status
 
-The app shell is in place: `main.dart`, dependency injection, theme and locale managers, and the error-handling core. The habits feature is not built yet, and there are no tests yet (`test/` is empty). The actual app to build is fully specified in `spec.md` — **read `spec.md` before writing any feature code**, it is the source of truth for requirements, architecture, and business rules.
+The app shell is in place: `main.dart`, dependency injection, theme and locale managers, the error-handling core, and the light/dark theme built from the Figma palette. The habits feature is not built yet. The only tests so far are the theme tests in `test/core/theme/`. The actual app to build is fully specified in `spec.md` — **read `spec.md` before writing any feature code**, it is the source of truth for requirements, architecture, and business rules.
 
 ### What's being built
 
@@ -84,11 +84,38 @@ The architecture is set up. Skills in `.claude/skills/` describe how to use and 
 - New mappers use `@Injectable(as: ExceptionMapper)`. Don't build an `ErrorHandler` by hand elsewhere.
 - Regenerate instead of editing. Run `dart run build_runner build` for `*.config.dart`, and `flutter gen-l10n` after ARB changes. Never hand-edit generated files.
 
+## Theme and colors
+
+The palette comes from the Figma "Color Palette" frame. It lives in three files in `lib/core/theme/`: `app_colors.dart` (raw hex values), `app_theme_colors.dart` (`AppThemeColors` extension) and `app_theme.dart` (builds light and dark).
+
+- Widgets never use `AppColors`, `Color(0x...)` or `Colors.*` (except `Colors.transparent`). Read colors from `Theme.of(context).colorScheme` or `context.appColors`, so light and dark both work. Only `lib/core/theme/` imports `app_colors.dart`.
+- Don't branch on brightness in widgets (`Theme.of(context).brightness == ...`). If a color differs between modes, it belongs in the theme.
+- Which role to use:
+  - background → `surface`
+  - main text → `onSurface`
+  - secondary text → `onSurfaceVariant`
+  - borders and unchecked checkbox → `outline`
+  - primary blue → `primary`
+  - FAB and progress card → `primaryContainer`
+  - error and delete → `error` / `errorContainer`
+  - completed state → `appColors.success` / `successContainer`
+  - habit card → `appColors.habitSurface`
+  - progress bar track → `appColors.progressTrack`
+- Style components through the component themes in `AppTheme._build` (card, checkbox, FAB, input, dialog, progress), not per widget. Override in a widget only for a one-off.
+- Text uses `Theme.of(context).textTheme` styles. Don't hardcode font sizes or text colors.
+- A new design color needs:
+  - a light and a dark constant in `AppColors`
+  - a `ColorScheme` role in `_build` if one fits; otherwise a new `AppThemeColors` field, added to `light`, `dark`, `copyWith` and `lerp`
+  - an assertion in `test/core/theme/app_theme_test.dart`
+- Figma is the source of truth for colors. Change a hex value there first, then copy it to `AppColors`. Don't invent shades in code.
+- Theme mode changes go only through `ThemeManager` (`setThemeMode` / `toggleTheme`), which saves the choice.
+
 ## Business rules that affect implementation
 
 - Habit names must be unique.
 - One completion record per calendar day — normalize timestamps to date-only before storing/comparing (see spec.md §7 Rule 3).
-- Current streak counts backward from today, stopping at the first missed day (spec.md §7 Rule 4).
+- Current streak counts backward, stopping at the first missed day; if today isn't completed yet, counting starts from yesterday (grace day, spec.md §7 Rule 4).
+- Nothing resets at midnight. "Done today" is derived from `completedDates`. The home screen reloads on app resume and at local midnight when the date changed (spec.md §7 Rule 5).
 - Name validation: required, ≤ 50 characters.
 
 Full functional requirements, UI mockups, and the suggested build order are in `spec.md` §2–§13 — consult it directly rather than re-deriving requirements from scratch.

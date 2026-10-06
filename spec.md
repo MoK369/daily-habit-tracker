@@ -189,6 +189,7 @@ Flutter Bloc (Cubit) for feature state, plus `provider` for simple view models /
 - Delete habit
 - Toggle completion
 - Calculate streaks
+- Refresh when the day changes (Rule 5)
 
 ### States
 
@@ -278,9 +279,11 @@ Stored as:
 
 ### Rule 4
 
-Current streak starts from today and moves backward until a missed day is found.
+Current streak counts consecutive completed days backward until a missed day is found.
 
-Example:
+Today is a grace day: if today is not completed yet, counting starts from yesterday, because today isn't missed until it ends. Checking today extends the streak by 1, and unchecking it returns the streak to the count up to yesterday.
+
+Example 1 (today completed):
 
 ```
 Today       ✅
@@ -289,11 +292,39 @@ Yesterday   ✅
 3 days ago  ❌
 ```
 
-Result:
+Result: `Current Streak = 3`
+
+Example 2 (today not completed yet):
 
 ```
-Current Streak = 3
+Today       ⬜
+Yesterday   ✅
+2 days ago  ✅
+3 days ago  ✅
+4 days ago  ❌
 ```
+
+Result: `Current Streak = 3` (shown as "3-day streak · Until yesterday")
+
+Example 3 (yesterday missed):
+
+```
+Today       ⬜
+Yesterday   ❌
+```
+
+Result: `Current Streak = 0`
+
+### Rule 5
+
+Nothing is reset when a day ends. "Completed today" is derived: a habit is checked if today's date is in its `completedDates`. On a new day, every habit shows as unchecked, the daily progress shows 0, and streaks follow Rule 4.
+
+The home screen must recalculate when the date changes:
+
+- When the app returns to the foreground (`AppLifecycleState.resumed`) and the date differs from the last load, reload habits.
+- While the app is open, schedule a refresh at the next local midnight.
+
+Example: the app is open at 23:59 with "Read 10 pages" checked. At 00:00 the row becomes unchecked, shows "7-day streak · Until yesterday", and the progress card shows "0 of N completed".
 
 ---
 
@@ -304,8 +335,11 @@ Current Streak = 3
 **Components**
 
 - AppBar
+- "Today" header with the current date
+- Daily progress card ("X of N completed" + progress bar)
 - Habit list
-- Floating Action Button
+- Swipe hint ("Swipe a habit to edit or delete")
+- Floating Action Button (extended, "Add habit")
 - Empty state
 
 **Habit Item**
