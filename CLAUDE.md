@@ -5,6 +5,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## General Rules
 Keep your replies concise, simple and short. Focus on conveying the key information. No unnecessary fluff, no long code snippets.
 
+## Code quality rules
+
+- **Function size**: no function or method body longer than 20 lines (the signature and closing brace don't count). Split long logic into well-named private helpers. This applies to non-widget code only. Widget code (`build` methods, widget classes) follows its own skill. Generated files (`*.g.dart`, `*.config.dart`, generated l10n) are exempt.
+- **SOLID**, applied to functions, classes and modules:
+  - Single responsibility: one reason to change per class or function (e.g. one usecase per action).
+  - Open/closed: extend by adding classes, not by editing working ones (e.g. a new `ExceptionMapper`).
+  - Liskov substitution: subclasses keep the base contract (e.g. every `AppFailure` subtype).
+  - Interface segregation: small, focused interfaces. No class depends on methods it doesn't use.
+  - Dependency inversion: depend on abstractions (repository interfaces in `domain/`), wired through `get_it`/`injectable`.
+- **Clean Architecture and separation of concerns**:
+  - `domain/`: entities, repository interfaces and usecases. Pure Dart, with no Flutter, Hive or `data/` imports.
+  - `data/`: models, datasources and repository implementations. It maps models to entities and is the only layer that catches exceptions (`safeCall`).
+  - `presentation/`: cubits, screens and widgets. Cubits call usecases only, never datasources or repositories directly. No business rules in widgets.
+  - Dependencies point inward only: presentation → domain ← data.
+
+## Testing
+
+- Keep unit-test line coverage at **70% or higher**, measured with `flutter test --coverage` (`coverage/lcov.info`). Generated files don't count.
+- Not every function needs a test. Cover the important ones first: usecases, business rules (streaks, date normalization, unique names, validation), repositories, mappers and cubits.
+- New feature code ships with tests for its important logic, so coverage never drops below 70%.
+
+## Third-party packages and documentation
+
+- Before writing, changing or debugging code that uses a third-party package, SDK, tool or API (pub.dev packages, Flutter/Dart SDK APIs, build_runner, Figma, etc.), look up its official, current documentation. Don't rely on memory.
+- Use the `DocsExplorer` subagent for these lookups. Give it the package name and the version from `pubspec.yaml` / `pubspec.lock`, and ask for the specific API or setup you need.
+- This applies to adding a package, upgrading one, and fixing errors that come from one.
+- If the docs differ from the patterns in this file or `spec.md`, follow the docs and tell the user about the mismatch.
+
 ## Project Status
 
 The app shell is in place: `main.dart`, dependency injection, theme and locale managers, the error-handling core, and the light/dark theme built from the Figma palette. The habits feature is not built yet. The only tests so far are the theme tests in `test/core/theme/`. The actual app to build is fully specified in `spec.md` — **read `spec.md` before writing any feature code**, it is the source of truth for requirements, architecture, and business rules.
@@ -22,6 +50,7 @@ flutter gen-l10n                # regenerate AppLocalizations after changing ARB
 flutter run                     # run on a connected device/emulator
 flutter analyze                 # static analysis (uses analysis_options.yaml / flutter_lints)
 flutter test                    # run all tests
+flutter test --coverage         # run tests and write coverage/lcov.info
 flutter test test/widget_test.dart          # run a single test file
 flutter test --plain-name "test name"       # run a single test by name
 flutter build apk / ios / linux / web       # platform builds
