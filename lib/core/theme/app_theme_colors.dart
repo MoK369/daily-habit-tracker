@@ -57,7 +57,11 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     if (other == null) return this;
     return AppThemeColors(
       success: Color.lerp(success, other.success, t)!,
-      successContainer: Color.lerp(successContainer, other.successContainer, t)!,
+      successContainer: Color.lerp(
+        successContainer,
+        other.successContainer,
+        t,
+      )!,
       habitSurface: Color.lerp(habitSurface, other.habitSurface, t)!,
       progressTrack: Color.lerp(progressTrack, other.progressTrack, t)!,
     );

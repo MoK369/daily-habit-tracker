@@ -43,6 +43,8 @@ class ThemeManager extends ChangeNotifier {
   }
 
   Future<void> toggleTheme() {
-    return setThemeMode(_themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
+    return setThemeMode(
+      _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark,
+    );
   }
 }

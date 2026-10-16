@@ -44,22 +44,23 @@ class AppTheme {
     required Color errorContainer,
     required AppThemeColors appColors,
   }) {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: primary,
-      brightness: brightness,
-    ).copyWith(
-      primary: primary,
-      primaryContainer: primaryContainer,
-      onPrimaryContainer: primary,
-      surface: background,
-      onSurface: primaryText,
-      onSurfaceVariant: secondaryText,
-      outline: border,
-      outlineVariant: border,
-      error: error,
-      errorContainer: errorContainer,
-      onErrorContainer: error,
-    );
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: primary,
+          brightness: brightness,
+        ).copyWith(
+          primary: primary,
+          primaryContainer: primaryContainer,
+          onPrimaryContainer: primary,
+          surface: background,
+          onSurface: primaryText,
+          onSurfaceVariant: secondaryText,
+          outline: border,
+          outlineVariant: border,
+          error: error,
+          errorContainer: errorContainer,
+          onErrorContainer: error,
+        );
 
     OutlineInputBorder inputBorder(Color color, [double width = 1]) =>
         OutlineInputBorder(
