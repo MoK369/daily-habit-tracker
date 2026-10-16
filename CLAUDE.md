@@ -7,7 +7,7 @@ Keep your replies concise, simple and short. Focus on conveying the key informat
 
 ## Code quality rules
 
-- **Function size**: no function or method body longer than 20 lines (the signature and closing brace don't count). Split long logic into well-named private helpers. This applies to non-widget code only. Widget code (`build` methods, widget classes) follows its own skill. Generated files (`*.g.dart`, `*.config.dart`, generated l10n) are exempt.
+- **Function size**: no function or method body longer than 20 lines (the signature and closing brace don't count). Split long logic into well-named private helpers. This applies to non-widget code only. Widget code (`build` methods, widget classes) follows the `flutter-widget-best-practices` skill instead: a widget class is at most 200 lines and a widget file at most 300 lines. Generated files (`*.g.dart`, `*.config.dart`, generated l10n) are exempt.
 - **SOLID**, applied to functions, classes and modules:
   - Single responsibility: one reason to change per class or function (e.g. one usecase per action).
   - Open/closed: extend by adding classes, not by editing working ones (e.g. a new `ExceptionMapper`).
@@ -86,6 +86,7 @@ lib/
 Key decisions baked into the spec — don't deviate without checking with the user:
 
 - **State management**: `flutter_bloc` Cubit (`HabitsCubit`), not raw Bloc. States: `HabitsInitial`, `HabitsLoading`, `HabitsLoaded(List<Habit>)`, `HabitsError(message)`. Use `provider` for simple view models / global app-level state (theme, locale) — Cubit stays for feature state.
+- **Cubit base and UI events**: every cubit extends `BaseCubit<State, UiEvent>` (`lib/core/base/presentation/`). State is for rebuilds only; one-shot effects (snackbars, navigation) go through the UiEvent stream via `showSuccess`/`showError`/`navigateTo`/... or `emitUiEvent` for screen-specific events. Cubits never build user text: success/info messages are `UiMessage` enum values (`enum XMessage implements UiMessage`), localized only in the UI by a feature extension (`message.localized(l10n)`) used from the screen's `localizeMessage` override. Screens consume them with `UiEventHandlerMixin` (subscribes in `initState`), not `BlocListener`/`BlocConsumer`. Screen-specific events are a `sealed class XUiEvent extends BaseUiEvent` handled in `onCustomUiEvent`; use `NoCustomUiEvent` when there are none. Load failures stay in state (`HabitsError`); action failures use `showError`.
 - **Persistence**: Hive CE (via `hive_ce_flutter`), fully offline — no backend. `flutter_secure_storage` handles app settings (theme, language — backs `ThemeManager`/`LocaleManager`) and is reserved for future sensitive data (e.g. a PIN/passcode lock), kept separate from Hive's habit data.
 - **Dependency injection**: `get_it` + `injectable` (code-generated registration).
 - **Localization**: Flutter's official `gen-l10n` (ARB files in `lib/core/l10n/`, `l10n.yaml` config, generated `AppLocalizations`) — no third-party i18n package.
